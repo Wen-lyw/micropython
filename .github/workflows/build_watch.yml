@@ -23,17 +23,10 @@ jobs:
       - name: Setup ESP-IDF
         shell: bash
         run: |
-          git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
+          # 【修改点1】将分支改为 v5.2.2 以满足 MicroPython 最新源码要求
+          git clone -b v5.2.2 --recursive https://github.com/espressif/esp-idf.git
           cd esp-idf
-
-          python3 -m pip install --upgrade pip wheel
-          python3 -m pip install "setuptools<81"
-
           ./install.sh
-
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip wheel
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install "setuptools<81"
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -c "import pkg_resources; print(pkg_resources.__file__)"
 
       - name: Build mpy-cross
         run: |
@@ -42,13 +35,12 @@ jobs:
       - name: Build Firmware
         shell: bash
         run: |
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip wheel
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install "setuptools<81"
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -c "import pkg_resources; print('pkg_resources ok')"
-
+          # 激活 ESP-IDF 环境
           source esp-idf/export.sh
+          
           cd ports/esp32
-          make submodules
+          # 【修改点2】带上 BOARD 参数拉取子模块，避免默认检查 GENERIC 报错
+          make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT submodules
           make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT
 
       - name: Upload Firmware
