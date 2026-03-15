@@ -28,6 +28,9 @@ jobs:
           python3 -m pip install --upgrade pip setuptools wheel
           ./install.sh
 
+          # 关键：直接给 IDF 自己的虚拟环境补 setuptools/pkg_resources
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip setuptools wheel
+
       - name: Build mpy-cross
         run: |
           make -C mpy-cross
@@ -36,7 +39,6 @@ jobs:
         shell: bash
         run: |
           source esp-idf/export.sh
-          python -m pip install --upgrade pip setuptools wheel
           cd ports/esp32
           make submodules
           make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT
