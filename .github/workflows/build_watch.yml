@@ -25,9 +25,15 @@ jobs:
         run: |
           git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
           cd esp-idf
-          python3 -m pip install --upgrade pip setuptools wheel
+
+          python3 -m pip install --upgrade pip wheel
+          python3 -m pip install "setuptools<81"
+
           ./install.sh
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip setuptools wheel
+
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip wheel
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install "setuptools<81"
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -c "import pkg_resources; print(pkg_resources.__file__)"
 
       - name: Build mpy-cross
         run: |
@@ -36,7 +42,10 @@ jobs:
       - name: Build Firmware
         shell: bash
         run: |
-          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip setuptools wheel || true
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip wheel
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install "setuptools<81"
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -c "import pkg_resources; print('pkg_resources ok')"
+
           source esp-idf/export.sh
           cd ports/esp32
           make submodules
