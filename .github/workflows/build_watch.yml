@@ -21,6 +21,7 @@ jobs:
             libusb-1.0-0
 
       - name: Setup ESP-IDF
+        shell: bash
         run: |
           git clone -b v5.0.2 --recursive https://github.com/espressif/esp-idf.git
           cd esp-idf
@@ -34,8 +35,8 @@ jobs:
       - name: Build Firmware
         shell: bash
         run: |
-          python3 -m pip install --upgrade pip setuptools wheel
           source esp-idf/export.sh
+          python -m pip install --upgrade pip setuptools wheel
           cd ports/esp32
           make submodules
           make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT
