@@ -1,53 +1,63 @@
-name: Build Watch Firmware
+name: Build LYW_WATCH_S3 MicroPython Firmware
 
 on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-firmware:
     runs-on: ubuntu-22.04
-
     steps:
-      - uses: actions/checkout@v4
+      - name: 检出当前项目仓库代码
+        uses: actions/checkout@v4
         with:
-          submodules: recursive
+          path: custom_board
 
-      - name: Install dependencies
+      - name: 检出 MicroPython 仓库 (关键修复：固定到 v1.24.1 以兼容 ESP-IDF v5.2.2)
+        uses: actions/checkout@v4
+        with:
+          repository: micropython/micropython
+          ref: v1.24.1  # 不要用 master 分支，使用与 ESP-IDF v5.2.2 完全兼容的稳定版本
+          path: micropython
+
+      - name: 安装系统依赖
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            git wget flex bison gperf python3 python3-pip python3-venv \
-            cmake ninja-build ccache libffi-dev libssl-dev dfu-util \
-            libusb-1.0-0
+          sudo apt-get install -y git wget flex bison gperf python3 python3-pip python3-venv cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
 
-      - name: Setup ESP-IDF
-        shell: bash
+      - name: 检出并设置 ESP-IDF v5.2.2
         run: |
-          # 【修改点1】将分支改为 v5.2.2 以满足 MicroPython 最新源码要求
           git clone -b v5.2.2 --recursive https://github.com/espressif/esp-idf.git
           cd esp-idf
-          ./install.sh
+          ./install.sh esp32s3
+        working-directory: micropython
 
-      - name: Build mpy-cross
+      - name: 编译 mpy-cross
         run: |
           make -C mpy-cross
+        working-directory: micropython
 
-      - name: Build Firmware
-        shell: bash
+      - name: 复制自定义开发板文件到 MicroPython
         run: |
-          # 激活 ESP-IDF 环境
-          source esp-idf/export.sh
-          
-          cd ports/esp32
-          # 【修改点2】带上 BOARD 参数拉取子模块，避免默认检查 GENERIC 报错
-          make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT submodules
-          make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT
+          # 确保你仓库根目录下的 LYW_WATCH_S3 文件夹存在
+          cp -r custom_board/LYW_WATCH_S3 micropython/ports/esp32/boards/
 
-      - name: Upload Firmware
+      - name: 编译 ESP32-S3 固件
+        run: |
+          source ../../esp-idf/export.sh
+          make submodules
+          make BOARD=LYW_WATCH_S3 BOARD_VARIANT=SPIRAM_OCT
+        working-directory: micropython/ports/esp32
+
+      - name: 上传编译好的固件
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-32mb-nousb
+          name: LYW_WATCH_S3-Firmware
           path: |
-            ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/firmware.bin
-            ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/bootloader/bootloader.bin
-            ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/partition_table/partition-table.bin 
+            micropython/ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/firmware.bin
+            micropython/ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/micropython.bin
+            micropython/ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/bootloader/bootloader.bin
+            micropython/ports/esp32/build-LYW_WATCH_S3-SPIRAM_OCT/partition_table/partition-table.bin
