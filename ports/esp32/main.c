@@ -25,7 +25,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
+#include "driver/gpio.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -101,20 +101,33 @@ static time_t platform_mbedtls_time(time_t *timer) {
 }
 #endif
 
+
 void mp_task(void *pvParameter) {
     volatile uint32_t sp = (uint32_t)esp_cpu_get_sp();
+
     #if MICROPY_PY_THREAD
     mp_thread_init(pxTaskGetStackStart(NULL), MICROPY_TASK_STACK_SIZE / sizeof(uintptr_t));
     #endif
+
     #if MICROPY_HW_ESP_USB_SERIAL_JTAG
     usb_serial_jtag_init();
+    #elif MICROPY_HW_ENABLE_USBDEV
+    usb_init();
+    #else
+    gpio_config_t usb_phy_conf = {
+        .pin_bit_mask = (1ULL << 19) | (1ULL << 20),
+        .mode = GPIO_MODE_DISABLE,
+        .pull_up_en = 0,
+        .pull_down_en = 0,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&usb_phy_conf);
     #endif
-    #if MICROPY_HW_ENABLE_USBDEV
-    usb_phy_init();
-    #endif
+
     #if MICROPY_HW_ENABLE_UART_REPL
     uart_stdout_init();
     #endif
+
     machine_init();
 
     #if MICROPY_SSL_MBEDTLS
