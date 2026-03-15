@@ -26,9 +26,9 @@ jobs:
         # 3. 编译您的板子 (LYW_WATCH_S3)
         # 注意：这里会使用我们刚才创建的板型
         make BOARD=LYW_WATCH_S3 SUBMODULES=1
-        
+  
     - name: Upload Firmware
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: firmware-32mb-nousb
         path: ports/esp32/build-LYW_WATCH_S3/firmware.bin
