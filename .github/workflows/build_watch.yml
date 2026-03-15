@@ -27,8 +27,6 @@ jobs:
           cd esp-idf
           python3 -m pip install --upgrade pip setuptools wheel
           ./install.sh
-
-          # 关键：直接给 IDF 自己的虚拟环境补 setuptools/pkg_resources
           ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip setuptools wheel
 
       - name: Build mpy-cross
@@ -38,6 +36,7 @@ jobs:
       - name: Build Firmware
         shell: bash
         run: |
+          ~/.espressif/python_env/idf5.0_py3.10_env/bin/python -m pip install --upgrade pip setuptools wheel || true
           source esp-idf/export.sh
           cd ports/esp32
           make submodules
